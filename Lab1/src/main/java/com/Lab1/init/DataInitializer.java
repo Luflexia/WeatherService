@@ -18,7 +18,7 @@ public class DataInitializer implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        // Создаем и сохраняем данные о погоде для инициализации
+        // Создаем и сохраняем данные о погоде для инициализаци
         WeatherEntity weatherEntity = new WeatherEntity();
         weatherEntity.setLocation("YourLocation");
         weatherEntity.setTemperature("YourTemperature");
