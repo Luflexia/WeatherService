@@ -4,9 +4,7 @@ import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Weather;
 import com.app.weather.service.WeatherService;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api")
@@ -35,7 +33,7 @@ public class WeatherController {
         List<Weather> allWeather = weatherService.getAllWeather();
         return allWeather.stream()
                 .map(this::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private WeatherDTO convertToDTO(Weather weather) {
