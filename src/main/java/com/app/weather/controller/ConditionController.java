@@ -16,18 +16,19 @@ import java.util.List;
 @RestController
 @RequestMapping("/conditions")
 public class ConditionController {
+    private final WeatherRepository weatherRepository;
+    private final ConditionRepository conditionRepository;
+    private final WeatherService weatherService;
+    private final ConditionService conditionService;
 
     @Autowired
-    private WeatherRepository weatherRepository;
-
-    @Autowired
-    private ConditionRepository conditionRepository;
-
-    @Autowired
-    private WeatherService weatherService;
-
-    @Autowired
-    private ConditionService conditionService;
+    public ConditionController(WeatherRepository weatherRepository, ConditionRepository conditionRepository,
+                               WeatherService weatherService, ConditionService conditionService) {
+        this.weatherRepository = weatherRepository;
+        this.conditionRepository = conditionRepository;
+        this.weatherService = weatherService;
+        this.conditionService = conditionService;
+    }
 
     // Создание нового условия погоды для определенной записи о погоде
     @PostMapping("/{weatherId}")
@@ -43,26 +44,27 @@ public class ConditionController {
     // Получение всех условий погоды для определенной записи о погоде
     @GetMapping("/{weatherId}")
     public ResponseEntity<List<Condition>> getAllConditions(@PathVariable Long weatherId) {
-        return weatherRepository.findById(weatherId).map(weather -> ResponseEntity.ok().body(weather.getConditions()))
+        return weatherRepository.findById(weatherId)
+                .map(weather -> ResponseEntity.ok().body(weather.getConditions()))
                 .orElse(ResponseEntity.notFound().build());
     }
 
     // Обновление информации о конкретном условии погоды
     @PutMapping("/{weatherId}")
-    public ResponseEntity<?> updateCondition(@PathVariable Long weatherId, @RequestBody Condition conditionDTO) {
+    public ResponseEntity<Void> updateCondition(@PathVariable Long weatherId, @RequestBody Condition conditionDTO) {
         Weather weather = weatherRepository.findById(weatherId).orElse(null);
         if (weather != null) {
             Condition condition = conditionRepository.findByWeather(weather);
-                condition.setText(conditionDTO.getText());
-                conditionRepository.save(condition);
-                return ResponseEntity.ok().build();
-            }
+            condition.setText(conditionDTO.getText());
+            conditionRepository.save(condition);
+            return ResponseEntity.ok().build();
+        }
         return ResponseEntity.notFound().build();
     }
 
     // Удаление конкретного условия погоды
     @DeleteMapping("/{weatherId}")
-    public ResponseEntity<?> deleteCondition(@PathVariable Long weatherId) {
+    public ResponseEntity<Void> deleteCondition(@PathVariable Long weatherId) {
         Weather weather = weatherRepository.findById(weatherId).orElse(null);
         if (weather != null) {
             Condition condition = conditionRepository.findByWeather(weather);
