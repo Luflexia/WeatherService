@@ -1,37 +1,24 @@
 package com.app.weather.dto;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import java.sql.Timestamp;
+import java.util.List;
+
+@Getter
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class WeatherDTO {
     private Long id;
     private String city;
-    private String weatherData;
+    private Timestamp date;
+    private double temperature;
+    private List<ConditionDTO> conditions;
 
-    public WeatherDTO(Long id, String city, String weatherData) {
-        this.id = id;
-        this.city = city;
-        this.weatherData = weatherData;
-    }
 
-    public Long getId() {
-        return id;
-    }
-
-    public void setId(Long id) {
-        this.id = id;
-    }
-
-    public String getCity() {
-        return city;
-    }
-
-    public void setCity(String city) {
-        this.city = city;
-    }
-
-    public String getWeatherData() {
-        return weatherData;
-    }
-
-    public void setWeatherData(String weatherData) {
-        this.weatherData = weatherData;
+    public WeatherDTO(Long id, String city, Timestamp date, double temperature) {
     }
 }

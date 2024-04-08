@@ -4,10 +4,11 @@ import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Weather;
 import com.app.weather.service.WeatherService;
 import org.springframework.web.bind.annotation.*;
+
 import java.util.List;
 
 @RestController
-@RequestMapping("/api")
+@RequestMapping("/weather")
 public class WeatherController {
     private final WeatherService weatherService;
 
@@ -15,36 +16,36 @@ public class WeatherController {
         this.weatherService = weatherService;
     }
 
-    @GetMapping("/weather")
-    public WeatherDTO getWeather(@RequestParam(value = "city") String city) {
+    @GetMapping("/{city}")
+    public WeatherDTO getWeather(@PathVariable String city) {
         Weather weather = weatherService.getWeather(city);
-        return convertToDTO(weather);
+        return weatherService.convertToDTO(weather);
     }
 
-    @PostMapping("/weather")
-    public WeatherDTO addWeather(@RequestBody WeatherDTO weatherDTO) {
-        Weather weather = convertToEntity(weatherDTO);
-        Weather createdWeather = weatherService.createWeather(weather);
-        return convertToDTO(createdWeather);
+    @PostMapping("/{city}")
+    public WeatherDTO addWeather(@PathVariable String city, @RequestBody WeatherDTO weatherDTO) {
+        Weather weather = weatherService.convertToEntity(weatherDTO);
+        Weather createdWeather = weatherService.createWeather(city, weather);
+        return weatherService.convertToDTO(createdWeather);
     }
 
-    @GetMapping("/weather/all")
+    @GetMapping("/all")
     public List<WeatherDTO> getAllWeather() {
         List<Weather> allWeather = weatherService.getAllWeather();
         return allWeather.stream()
-                .map(this::convertToDTO)
+                .map(weatherService::convertToDTO)
                 .toList();
     }
 
-    private WeatherDTO convertToDTO(Weather weather) {
-        return new WeatherDTO(weather.getId(), weather.getCity(), weather.getWeatherData());
+    @DeleteMapping("/{city}")
+    public void deleteWeatherByCity(@PathVariable String city) {
+        weatherService.deleteWeatherByCity(city);
     }
 
-    private Weather convertToEntity(WeatherDTO weatherDTO) {
-        Weather weather = new Weather();
-        weather.setId(weatherDTO.getId());
-        weather.setCity(weatherDTO.getCity());
-        weather.setWeatherData(weatherDTO.getWeatherData());
-        return weather;
+    @PutMapping("/{city}")
+    public WeatherDTO updateWeather(@PathVariable String city, @RequestBody WeatherDTO weatherDTO) {
+        Weather weather = weatherService.convertToEntity(weatherDTO);
+        Weather updatedWeather = weatherService.updateWeather(city, weather);
+        return weatherService.convertToDTO(updatedWeather);
     }
 }
