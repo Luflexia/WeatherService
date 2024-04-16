@@ -1,5 +1,4 @@
 package com.app.weather.service;
-
 import com.app.weather.dto.ConditionDTO;
 import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Condition;
@@ -7,57 +6,79 @@ import com.app.weather.model.Weather;
 import com.app.weather.repository.WeatherRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
 public class WeatherService {
+
     private final WeatherRepository weatherRepository;
+    private final ConditionService conditionService;
 
-    public WeatherService(WeatherRepository weatherRepository) {
+    public WeatherService(WeatherRepository weatherRepository, ConditionService conditionService) {
         this.weatherRepository = weatherRepository;
-    }
-    public List<Weather> getAllWeather() {
-        return weatherRepository.findAll();
+        this.conditionService = conditionService;
     }
 
-    public void deleteWeatherByCity(String city) {
-        Weather weather = weatherRepository.findByCity(city);
-        if (weather != null) {
-            weatherRepository.delete(weather);
+    public Weather createWeatherWithCondition(WeatherDTO weatherDTO) {
+        Weather weather = convertToEntity(weatherDTO);
+        weather.setDate(new Timestamp(System.currentTimeMillis()));
+
+        // Проверяем, существует ли уже погода для этого города
+        Weather existingWeather = weatherRepository.findByCity(weather.getCity());
+        if (existingWeather != null) {
+            throw new RuntimeException("Погода для этого города уже существует");
         }
+        // Проверяем, существует ли условие, если нет, то создаем его
+        Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
+        if (condition == null) {
+            condition = conditionService.convertToEntity(weatherDTO.getCondition());
+            condition = conditionService.createCondition(condition); // сохраняем объект Condition в базе данных
+        }
+
+        // Устанавливаем связь между погодой и условием
+        weather.setCondition(condition);
+        condition.addWeather(weather);
+
+        // Создаем новую погоду
+        return weatherRepository.save(weather);
     }
 
-    public Weather getWeatherById(Long weatherId) {
-        return weatherRepository.findById(weatherId).orElse(null);
-    }
+    public Weather updateWeather(Long id, WeatherDTO weatherDTO) {
+        Weather existingWeather = weatherRepository.findById(id).orElse(null);
+        if (existingWeather == null) {
+            return null;
+        }
+        existingWeather.setDate(new Timestamp(System.currentTimeMillis()));
+        existingWeather.setTemperature(weatherDTO.getTemperature());
 
-    public Weather updateWeather(String city, Weather updatedWeather) {
-        Weather existingWeather = weatherRepository.findByCity(city);
-        existingWeather.setTemperature(updatedWeather.getTemperature());
-        existingWeather.setDate(Timestamp.valueOf(LocalDateTime.now()));
+        // Проверяем, существует ли уже погода для этого города
+        Weather weatherByCity = weatherRepository.findByCity(weatherDTO.getCity());
+        if (weatherByCity != null && !weatherByCity.getId().equals(id)) {
+            return weatherByCity;
+        }
+
+        // Проверяем, существует ли условие, если нет, то создаем его
+        Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
+        if (condition == null) {
+            condition = conditionService.convertToEntity(weatherDTO.getCondition());
+        }
+        existingWeather.setCondition(condition);
+
         return weatherRepository.save(existingWeather);
     }
 
-    public Weather createWeather(String city, Weather weather) {
-        Weather existingWeather = weatherRepository.findByCity(city);
-
-        if (existingWeather != null) {
-            // Если запись с таким городом уже существует, обновляем ее
-            existingWeather.setTemperature(weather.getTemperature());
-            existingWeather.setDate(new Timestamp(System.currentTimeMillis()));
-            return weatherRepository.save(existingWeather);
-        } else {
-            // Если записи с таким городом нет, создаем новую
-            weather.setCity(city);
-            weather.setDate(new Timestamp(System.currentTimeMillis()));
-            return weatherRepository.save(weather);
-        }
+    public void deleteWeather(Long id) {
+        weatherRepository.deleteById(id);
     }
-    public Weather getWeather(String city) {
-        return weatherRepository.findByCity(city);
+
+    public Weather getWeatherById(Long id) {
+        return weatherRepository.findById(id).orElse(null);
+    }
+
+    public List<Weather> getAllWeathers() {
+        return weatherRepository.findAll();
     }
 
     public WeatherDTO convertToDTO(Weather weather) {
@@ -67,21 +88,20 @@ public class WeatherService {
         dto.setDate(weather.getDate());
         dto.setTemperature(weather.getTemperature());
 
-        List<ConditionDTO> conditionDTOs = weather.getConditions().stream()
-                .map(this::convertConditionToDTO)
-                .toList();
-        dto.setConditions(conditionDTOs);
+        ConditionDTO conditionDTO = conditionService.convertToDTO(weather.getCondition());
+        dto.setCondition(conditionDTO);
         return dto;
     }
 
-    public ConditionDTO convertConditionToDTO(Condition condition) {
-        return new ConditionDTO(condition.getId(), condition.getText(), condition.getWeatherId());
-    }
-    public Weather convertToEntity(WeatherDTO weatherDTO) {
+    private Weather convertToEntity(WeatherDTO weatherDTO) {
         Weather weather = new Weather();
-        weather.setId(weatherDTO.getId());
         weather.setCity(weatherDTO.getCity());
+        weather.setDate(weatherDTO.getDate());
         weather.setTemperature(weatherDTO.getTemperature());
+        // Создаем объект Condition на основе conditionText
+        Condition condition = new Condition();
+        condition.setText(weatherDTO.getCondition().getText());
+        weather.setCondition(condition);
         return weather;
     }
 

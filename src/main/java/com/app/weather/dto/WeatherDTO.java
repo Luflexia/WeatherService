@@ -1,11 +1,7 @@
 package com.app.weather.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import java.sql.Timestamp;
-import java.util.List;
 
 @Getter
 @Setter
@@ -16,9 +12,6 @@ public class WeatherDTO {
     private String city;
     private Timestamp date;
     private double temperature;
-    private List<ConditionDTO> conditions;
+    private ConditionDTO condition;
 
-
-    public WeatherDTO(Long id, String city, Timestamp date, double temperature) {
-    }
 }

@@ -1,58 +1,73 @@
 package com.app.weather.service;
 
 import com.app.weather.dto.ConditionDTO;
+import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Condition;
-import com.app.weather.model.Weather;
 import com.app.weather.repository.ConditionRepository;
-import com.app.weather.repository.WeatherRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class ConditionService {
+
     private final ConditionRepository conditionRepository;
-    private final WeatherRepository weatherRepository;
 
-    public ConditionService(ConditionRepository conditionRepository, WeatherRepository weatherRepository) {
+    public ConditionService(ConditionRepository conditionRepository) {
         this.conditionRepository = conditionRepository;
-        this.weatherRepository = weatherRepository;
     }
 
-    public Condition createCondition(Condition conditionDTO) {
-        Weather weather = weatherRepository.findById(conditionDTO.getWeatherId()).orElse(null);
-
-        if (weather != null) {
-            Condition existingCondition = conditionRepository.findByWeather(weather);
-
-            if (existingCondition != null) {
-                // Запись уже существует, выполняем обновление поля "text"
-                existingCondition.setText(conditionDTO.getText());
-                return conditionRepository.save(existingCondition);
-            } else {
-                // Записи не существует, создаем новую запись
-                Condition newCondition = new Condition();
-                newCondition.setText(conditionDTO.getText());
-                newCondition.setWeather(weather);
-                return conditionRepository.save(newCondition);
-            }
+    public Condition createCondition(Condition condition) {
+        Condition existingCondition = conditionRepository.findByText(condition.getText());
+        if (existingCondition != null) {
+            return existingCondition;
         }
-        // Если запись погоды не найдена
-        return null;
-    }
-    public Condition updateCondition(Long conditionId, ConditionDTO updatedConditionDTO) {
-        return conditionRepository.findById(conditionId).map(condition -> {
-            Weather weather = weatherRepository.findById(updatedConditionDTO.getWeatherId()).orElse(null);
-            condition.setText(updatedConditionDTO.getText());
-            condition.setWeather(weather);
-            return conditionRepository.save(condition);
-
-        }).orElse(null);
+        return conditionRepository.save(condition);
     }
 
-    public boolean deleteCondition(Long conditionId) {
-        return conditionRepository.findById(conditionId).map(condition -> {
-            conditionRepository.delete(condition);
-            return true;
+    public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
+        Condition existingCondition = getConditionById(id);
+        if (existingCondition == null) {
+            return null;
+        }
+        Condition condition = conditionRepository.findByText(conditionDTO.getText());
+        if (condition != null && !condition.getId().equals(id)) {
+            return condition;
+        }
+        existingCondition.setText(conditionDTO.getText());
+        return conditionRepository.save(existingCondition);
+    }
 
-        }).orElse(false);
+    public boolean deleteCondition(Long id) {
+        if (!conditionRepository.existsById(id)) {
+            return false;
+        }
+        conditionRepository.deleteById(id);
+        return true;
+    }
+
+    public Condition getConditionById(Long id) {
+        return conditionRepository.findById(id).orElse(null);
+    }
+
+    public List<Condition> getAllConditions() {
+        return conditionRepository.findAll();
+    }
+
+    public Condition convertToEntity(ConditionDTO conditionDTO) {
+        Condition condition = new Condition();
+        condition.setText(conditionDTO.getText());
+        return condition;
+    }
+
+    public ConditionDTO convertToDTO(Condition condition) {
+        if (condition == null) {
+            return null;
+        }
+        return new ConditionDTO(condition.getId(), condition.getText());
+    }
+    public Condition getConditionByText(String text) {
+        return conditionRepository.findByText(text);
     }
 }
