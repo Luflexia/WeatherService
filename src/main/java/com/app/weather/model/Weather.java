@@ -2,7 +2,6 @@ package com.app.weather.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.sql.Timestamp;
 
 @Entity

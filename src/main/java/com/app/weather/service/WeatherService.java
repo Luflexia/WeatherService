@@ -4,10 +4,8 @@ import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import com.app.weather.repository.WeatherRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -28,7 +26,7 @@ public class WeatherService {
         // Проверяем, существует ли уже погода для этого города
         Weather existingWeather = weatherRepository.findByCity(weather.getCity());
         if (existingWeather != null) {
-            throw new RuntimeException("Погода для этого города уже существует");
+            return existingWeather;
         }
         // Проверяем, существует ли условие, если нет, то создаем его
         Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());

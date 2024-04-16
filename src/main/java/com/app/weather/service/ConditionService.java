@@ -1,10 +1,8 @@
 package com.app.weather.service;
 
 import com.app.weather.dto.ConditionDTO;
-import com.app.weather.dto.WeatherDTO;
 import com.app.weather.model.Condition;
 import com.app.weather.repository.ConditionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

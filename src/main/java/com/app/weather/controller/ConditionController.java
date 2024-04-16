@@ -3,10 +3,8 @@ package com.app.weather.controller;
 import com.app.weather.dto.ConditionDTO;
 import com.app.weather.model.Condition;
 import com.app.weather.service.ConditionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController
