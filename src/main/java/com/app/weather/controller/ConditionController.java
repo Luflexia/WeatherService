@@ -13,8 +13,11 @@ import java.util.List;
 @RequestMapping("/conditions")
 public class ConditionController {
 
-    @Autowired
-    private ConditionService conditionService;
+    private final ConditionService conditionService;
+
+    public ConditionController(ConditionService conditionService) {
+        this.conditionService = conditionService;
+    }
 
     @GetMapping
     public ResponseEntity<List<ConditionDTO>> getAllConditions() {
