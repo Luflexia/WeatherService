@@ -55,7 +55,6 @@ public class ConditionService {
         if (!conditionRepository.existsById(id)) {
             return false;
         }
-        Condition condition = conditionRepository.findById(id).orElse(null);
         conditionRepository.deleteById(id);
         cacheKey = id.toString();
         cache.remove(cacheKey);
