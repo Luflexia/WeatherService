@@ -1,8 +1,10 @@
 package com.app.weather.service;
 
+import com.app.weather.component.CacheComponent;
 import com.app.weather.dto.ConditionDTO;
 import com.app.weather.model.Condition;
 import com.app.weather.repository.ConditionRepository;
+import jakarta.transaction.Transactional;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,19 +13,27 @@ import java.util.List;
 public class ConditionService {
 
     private final ConditionRepository conditionRepository;
+    private final CacheComponent cache;
+    private String cacheKey;
 
-    public ConditionService(ConditionRepository conditionRepository) {
+    public ConditionService(ConditionRepository conditionRepository, CacheComponent cache) {
         this.conditionRepository = conditionRepository;
+        this.cache = cache;
     }
 
+    @Transactional
     public Condition createCondition(Condition condition) {
         Condition existingCondition = conditionRepository.findByText(condition.getText());
         if (existingCondition != null) {
             return existingCondition;
         }
-        return conditionRepository.save(condition);
+        Condition savedCondition = conditionRepository.save(condition);
+        cacheKey = savedCondition.getId().toString();
+        cache.put(cacheKey, savedCondition);
+        return savedCondition;
     }
 
+    @Transactional
     public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
         Condition existingCondition = getConditionById(id);
         if (existingCondition == null) {
@@ -34,23 +44,46 @@ public class ConditionService {
             return condition;
         }
         existingCondition.setText(conditionDTO.getText());
-        return conditionRepository.save(existingCondition);
+        Condition savedCondition = conditionRepository.save(existingCondition);
+        cacheKey = savedCondition.getId().toString();
+        cache.put(cacheKey, savedCondition);
+        return savedCondition;
     }
 
+    @Transactional
     public boolean deleteCondition(Long id) {
         if (!conditionRepository.existsById(id)) {
             return false;
         }
+        Condition condition = conditionRepository.findById(id).orElse(null);
         conditionRepository.deleteById(id);
+        cacheKey = id.toString();
+        cache.remove(cacheKey);
         return true;
     }
 
+    @Transactional
     public Condition getConditionById(Long id) {
-        return conditionRepository.findById(id).orElse(null);
+        cacheKey = id.toString();
+        Condition condition = (Condition) cache.get(cacheKey);
+        if (condition != null) {
+            return condition;
+        }
+        condition = conditionRepository.findById(id).orElse(null);
+        if (condition != null) {
+            cache.put(cacheKey, condition);
+        }
+        return condition;
     }
 
+    @Transactional
     public List<Condition> getAllConditions() {
-        return conditionRepository.findAll();
+        List<Condition> conditions = conditionRepository.findAll();
+        conditions.forEach(condition -> {
+            cacheKey = condition.getId().toString();
+            cache.put(cacheKey, condition);
+        });
+        return conditions;
     }
 
     public Condition convertToEntity(ConditionDTO conditionDTO) {
@@ -65,7 +98,14 @@ public class ConditionService {
         }
         return new ConditionDTO(condition.getId(), condition.getText());
     }
+
+    @Transactional
     public Condition getConditionByText(String text) {
-        return conditionRepository.findByText(text);
+        Condition condition = conditionRepository.findByText(text);
+        if (condition != null) {
+            cacheKey = condition.getId().toString();
+            cache.put(cacheKey, condition);
+        }
+        return condition;
     }
 }

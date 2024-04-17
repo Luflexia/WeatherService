@@ -8,11 +8,11 @@ import java.util.Map;
 public class CacheComponent {
 
     private final Map<String, Object> hashMap = new HashMap<>();
-    private final int MAX_SIZE = 100;
 
     public void put(String key, Object value) {
         hashMap.put(key, value);
-        if (hashMap.size() > MAX_SIZE) {
+        int maxSize = 100;
+        if (hashMap.size() > maxSize) {
             String oldestKey = hashMap.keySet().iterator().next();
             hashMap.remove(oldestKey);
         }

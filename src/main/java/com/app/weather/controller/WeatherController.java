@@ -17,10 +17,13 @@ public class WeatherController {
         this.weatherService = weatherService;
     }
 
-    @PostMapping
-    public ResponseEntity<WeatherDTO> createWeatherWithConditionText(@RequestBody WeatherDTO weatherDTO) {
-        Weather createdWeather = weatherService.createWeatherWithCondition(weatherDTO);
-        return ResponseEntity.ok(weatherService.convertToDTO(createdWeather));
+    @GetMapping
+    public ResponseEntity<List<WeatherDTO>> getAllWeathers() {
+        List<Weather> weathers = weatherService.getAllWeathers();
+        List<WeatherDTO> weatherDTOs = weathers.stream()
+                .map(weatherService::convertToDTO)
+                .toList();
+        return ResponseEntity.ok(weatherDTOs);
     }
 
     @GetMapping("/{id}")
@@ -31,6 +34,20 @@ public class WeatherController {
         }
         return ResponseEntity.ok(weatherService.convertToDTO(weather));
     }
+    //Query
+    @GetMapping("/cities/{temperature}")
+    public ResponseEntity<List<WeatherDTO>> getWeatherByTemperature(@PathVariable double temperature) {
+        List<WeatherDTO> weatherDTOs = weatherService.findByTemperature(temperature);
+        return ResponseEntity.ok(weatherDTOs);
+    }
+
+
+    @PostMapping
+    public ResponseEntity<WeatherDTO> createWeatherWithConditionText(@RequestBody WeatherDTO weatherDTO) {
+        Weather createdWeather = weatherService.createWeatherWithCondition(weatherDTO);
+        return ResponseEntity.ok(weatherService.convertToDTO(createdWeather));
+    }
+
 
     @PutMapping("/{id}")
     public ResponseEntity<WeatherDTO> updateWeather(@PathVariable Long id, @RequestBody WeatherDTO weatherDTO) {
@@ -47,12 +64,4 @@ public class WeatherController {
         return ResponseEntity.noContent().build();
     }
 
-    @GetMapping
-    public ResponseEntity<List<WeatherDTO>> getAllWeathers() {
-        List<Weather> weathers = weatherService.getAllWeathers();
-        List<WeatherDTO> weatherDTOs = weathers.stream()
-                .map(weatherService::convertToDTO)
-                .toList();
-        return ResponseEntity.ok(weatherDTOs);
-    }
 }
