@@ -155,4 +155,12 @@ public class WeatherService {
                 .map(this::convertToDTO)
                 .toList();
     }
+
+    public List<WeatherDTO> findByConditionText(String conditionText) {
+        List<Weather> weathers = weatherRepository.findByConditionText(conditionText);
+        return weathers.stream()
+                .map(this::convertToDTO)
+                .toList();
+    }
+
 }

@@ -13,6 +13,9 @@ public interface WeatherRepository extends JpaRepository<Weather, Long> {
     //JPQL
     @Query("SELECT w FROM Weather w WHERE w.temperature = :temperature")
     List<Weather> findByTemperature(@Param("temperature") double temperature);
+
+    @Query("SELECT w FROM Weather w JOIN w.condition c WHERE c.text = :conditionText")
+    List<Weather> findByConditionText(@Param("conditionText") String conditionText);
 }
 
 

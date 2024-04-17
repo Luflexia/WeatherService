@@ -35,19 +35,23 @@ public class WeatherController {
         return ResponseEntity.ok(weatherService.convertToDTO(weather));
     }
     //Query
-    @GetMapping("/cities/{temperature}")
+    @GetMapping("/citiesT/{temperature}")
     public ResponseEntity<List<WeatherDTO>> getWeatherByTemperature(@PathVariable double temperature) {
         List<WeatherDTO> weatherDTOs = weatherService.findByTemperature(temperature);
         return ResponseEntity.ok(weatherDTOs);
     }
 
+    @GetMapping("/citiesC/{conditionText}")
+    public ResponseEntity<List<WeatherDTO>> findByConditionText(@PathVariable String conditionText) {
+        List<WeatherDTO> weathers = weatherService.findByConditionText(conditionText);
+        return ResponseEntity.ok(weathers);
+    }
 
     @PostMapping
     public ResponseEntity<WeatherDTO> createWeatherWithConditionText(@RequestBody WeatherDTO weatherDTO) {
         Weather createdWeather = weatherService.createWeatherWithCondition(weatherDTO);
         return ResponseEntity.ok(weatherService.convertToDTO(createdWeather));
     }
-
 
     @PutMapping("/{id}")
     public ResponseEntity<WeatherDTO> updateWeather(@PathVariable Long id, @RequestBody WeatherDTO weatherDTO) {
