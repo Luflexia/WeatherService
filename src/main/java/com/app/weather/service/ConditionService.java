@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class ConditionService {
 
-    private final String notFoundMsg = "Condition not found";
+    private ыfinal String NOT_FOUND_MSG = "Condition not found";
     private final ConditionRepository conditionRepository;
     private final CacheComponent cache;
     private final CustomLogger customLogger;
@@ -48,7 +48,7 @@ public class ConditionService {
         customLogger.info("Updating condition with id: " + id);
         Condition existingCondition = getConditionService().getConditionById(id);
         if (existingCondition == null) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         if (conditionRepository.existsByTextAndIdNot(conditionDTO.getText(), id)) {
             throw new BadRequestException("Condition with this text already exists");
@@ -64,7 +64,7 @@ public class ConditionService {
     public boolean deleteCondition(Long id) {
         customLogger.info("Deleting condition with id: " + id);
         if (!conditionRepository.existsById(id)) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         conditionRepository.deleteById(id);
         cacheKey = id.toString();
@@ -85,7 +85,7 @@ public class ConditionService {
             if (condition != null) {
                 cache.put(cacheKey, condition);
             } else {
-                throw new BadRequestException(notFoundMsg);
+                throw new BadRequestException(NOT_FOUND_MSG);
             }
             return condition;
         } catch (Exception e) {

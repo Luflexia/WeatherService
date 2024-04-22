@@ -18,7 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WeatherService {
-    private final String notFoundMsg = "Weather not found";
+    private static final String NOT_FOUND_MSG = "Weather not found";
     private final WeatherRepository weatherRepository;
     private final ConditionService conditionService;
     private final CacheComponent cache;
@@ -82,7 +82,7 @@ public class WeatherService {
         customLogger.info("Updating weather with id: " + id);
         Weather existingWeather = getWeatherService().getWeatherById(id);
         if (existingWeather == null) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         if (weatherRepository.existsByCityAndIdNot(weatherDTO.getCity(), id)) {
             throw new BadRequestException("Weather for this city already exists");
@@ -118,7 +118,7 @@ public class WeatherService {
         customLogger.info("Deleting weather with id: {}" + id);
         Weather weather = getWeatherService().getWeatherById(id);
         if (weather == null) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         weatherRepository.delete(weather);
         cacheKey = weather.getCity();
@@ -131,7 +131,7 @@ public class WeatherService {
         try {
             Weather weather = weatherRepository.findById(id).orElse(null);
             if (weather == null) {
-                throw new BadRequestException(notFoundMsg);
+                throw new BadRequestException(NOT_FOUND_MSG);
             }
             cacheKey = weather.getCity();
             cache.put(cacheKey, weather);
