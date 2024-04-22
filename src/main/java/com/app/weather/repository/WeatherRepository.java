@@ -10,6 +10,11 @@ import java.util.List;
 @Repository
 public interface WeatherRepository extends JpaRepository<Weather, Long> {
     Weather findByCity(String city);
+
+    boolean existsByCity(String city);
+
+    boolean existsByCityAndIdNot(String city, Long id);
+
     //JPQL
     @Query("SELECT w FROM Weather w WHERE w.temperature = :temperature")
     List<Weather> findByTemperature(@Param("temperature") double temperature);
@@ -17,5 +22,3 @@ public interface WeatherRepository extends JpaRepository<Weather, Long> {
     @Query("SELECT w FROM Weather w JOIN w.condition c WHERE c.text = :conditionText")
     List<Weather> findByConditionText(@Param("conditionText") String conditionText);
 }
-
-
