@@ -8,6 +8,7 @@ import com.app.weather.exceptions.InternalServerErrorException;
 import com.app.weather.model.Condition;
 import com.app.weather.repository.ConditionRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
@@ -15,16 +16,19 @@ import java.util.List;
 @Service
 public class ConditionService {
 
+    private final String notFoundMsg = "Condition not found";
     private final ConditionRepository conditionRepository;
     private final CacheComponent cache;
     private final CustomLogger customLogger;
     private String cacheKey;
+    private final ApplicationContext applicationContext;
 
     @Autowired
-    public ConditionService(ConditionRepository conditionRepository, CacheComponent cache, CustomLogger customLogger) {
+    public ConditionService(ConditionRepository conditionRepository, CacheComponent cache, CustomLogger customLogger, ApplicationContext applicationContext) {
         this.conditionRepository = conditionRepository;
         this.cache = cache;
         this.customLogger = customLogger;
+        this.applicationContext = applicationContext;
     }
 
     @Transactional
@@ -42,9 +46,9 @@ public class ConditionService {
     @Transactional
     public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
         customLogger.info("Updating condition with id: " + id);
-        Condition existingCondition = getConditionById(id);
+        Condition existingCondition = getConditionService().getConditionById(id);
         if (existingCondition == null) {
-            throw new BadRequestException("Condition not found");
+            throw new BadRequestException(notFoundMsg);
         }
         if (conditionRepository.existsByTextAndIdNot(conditionDTO.getText(), id)) {
             throw new BadRequestException("Condition with this text already exists");
@@ -60,7 +64,7 @@ public class ConditionService {
     public boolean deleteCondition(Long id) {
         customLogger.info("Deleting condition with id: " + id);
         if (!conditionRepository.existsById(id)) {
-            throw new BadRequestException("Condition not found");
+            throw new BadRequestException(notFoundMsg);
         }
         conditionRepository.deleteById(id);
         cacheKey = id.toString();
@@ -81,7 +85,7 @@ public class ConditionService {
             if (condition != null) {
                 cache.put(cacheKey, condition);
             } else {
-                throw new BadRequestException("Condition not found");
+                throw new BadRequestException(notFoundMsg);
             }
             return condition;
         } catch (Exception e) {
@@ -120,6 +124,7 @@ public class ConditionService {
     }
 
     @Transactional
+
     public Condition getConditionByText(String text) {
         customLogger.info("Getting condition by text: " + text);
         try {
@@ -132,5 +137,9 @@ public class ConditionService {
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to get condition by text");
         }
+    }
+
+    private ConditionService getConditionService() {
+        return applicationContext.getBean(ConditionService.class);
     }
 }

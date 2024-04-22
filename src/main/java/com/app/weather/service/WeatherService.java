@@ -9,6 +9,7 @@ import com.app.weather.exceptions.InternalServerErrorException;
 import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import com.app.weather.repository.WeatherRepository;
+import org.springframework.context.ApplicationContext;
 import java.sql.Timestamp;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,19 +18,21 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class WeatherService {
-
+    private final String notFoundMsg = "Weather not found";
     private final WeatherRepository weatherRepository;
     private final ConditionService conditionService;
     private final CacheComponent cache;
     private final CustomLogger customLogger;
     private String cacheKey;
+    private final ApplicationContext applicationContext;
 
     @Autowired
-    public WeatherService(WeatherRepository weatherRepository, ConditionService conditionService, CacheComponent cache, CustomLogger customLogger) {
+    public WeatherService(WeatherRepository weatherRepository, ConditionService conditionService, CacheComponent cache, CustomLogger customLogger, ApplicationContext applicationContext) {
         this.weatherRepository = weatherRepository;
         this.conditionService = conditionService;
         this.cache = cache;
         this.customLogger = customLogger;
+        this.applicationContext = applicationContext;
     }
 
     @Transactional
@@ -77,9 +80,9 @@ public class WeatherService {
     @Transactional
     public Weather updateWeather(Long id, WeatherDTO weatherDTO) {
         customLogger.info("Updating weather with id: " + id);
-        Weather existingWeather = getWeatherById(id);
+        Weather existingWeather = getWeatherService().getWeatherById(id);
         if (existingWeather == null) {
-            throw new BadRequestException("Weather not found");
+            throw new BadRequestException(notFoundMsg);
         }
         if (weatherRepository.existsByCityAndIdNot(weatherDTO.getCity(), id)) {
             throw new BadRequestException("Weather for this city already exists");
@@ -113,9 +116,9 @@ public class WeatherService {
     @Transactional
     public void deleteWeather(Long id) {
         customLogger.info("Deleting weather with id: {}" + id);
-        Weather weather = getWeatherById(id);
+        Weather weather = getWeatherService().getWeatherById(id);
         if (weather == null) {
-            throw new BadRequestException("Weather not found");
+            throw new BadRequestException(notFoundMsg);
         }
         weatherRepository.delete(weather);
         cacheKey = weather.getCity();
@@ -128,7 +131,7 @@ public class WeatherService {
         try {
             Weather weather = weatherRepository.findById(id).orElse(null);
             if (weather == null) {
-                throw new BadRequestException("Weather not found");
+                throw new BadRequestException(notFoundMsg);
             }
             cacheKey = weather.getCity();
             cache.put(cacheKey, weather);
@@ -201,5 +204,9 @@ public class WeatherService {
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to find weathers by condition text");
         }
+    }
+
+    private WeatherService getWeatherService() {
+        return applicationContext.getBean(WeatherService.class);
     }
 }
