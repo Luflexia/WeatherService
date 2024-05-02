@@ -89,7 +89,7 @@ public class ConditionService {
             }
             return condition;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Failed to get condition by id");
+            throw new InternalServerErrorException("Condition with this ID doesnt exists");
         }
     }
 
@@ -135,7 +135,7 @@ public class ConditionService {
             }
             return condition;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Failed to get condition by text");
+            throw new InternalServerErrorException("Condition with this TEXT doesnt exists");
         }
     }
 

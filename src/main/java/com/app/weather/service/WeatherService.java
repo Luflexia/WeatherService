@@ -137,7 +137,7 @@ public class WeatherService {
             cache.put(cacheKey, weather);
             return weather;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Failed to get weather by id");
+            throw new InternalServerErrorException("Weather with this ID doesnt exists");
         }
     }
 
