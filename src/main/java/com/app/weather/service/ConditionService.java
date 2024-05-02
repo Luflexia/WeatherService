@@ -16,7 +16,7 @@ import java.util.List;
 @Service
 public class ConditionService {
 
-    private final String notFoundMsg = "Condition not found";
+    private static final String notFoundMsg = "Condition not found";
     private final ConditionRepository conditionRepository;
     private final CacheComponent cache;
     private final CustomLogger customLogger;
