@@ -7,7 +7,6 @@ import com.app.weather.service.WeatherService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/weather")
@@ -27,7 +26,7 @@ public class WeatherController {
         List<Weather> createdWeathers = weatherService.createWeatherBulk(weatherDTOs);
         return ResponseEntity.ok(createdWeathers.stream()
                 .map(weatherService::convertToDTO)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @GetMapping
@@ -36,7 +35,7 @@ public class WeatherController {
         List<Weather> weathers = weatherService.getAllWeathers();
         List<WeatherDTO> weatherDTOs = weathers.stream()
                 .map(weatherService::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(weatherDTOs);
     }
 

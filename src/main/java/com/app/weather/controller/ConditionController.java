@@ -7,7 +7,6 @@ import com.app.weather.service.ConditionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/conditions")
@@ -27,7 +26,7 @@ public class ConditionController {
         List<Condition> createdConditions = conditionService.createConditionBulk(conditionDTOs);
         return ResponseEntity.ok(createdConditions.stream()
                 .map(conditionService::convertToDTO)
-                .collect(Collectors.toList()));
+                .toList());
     }
 
     @GetMapping
@@ -36,7 +35,7 @@ public class ConditionController {
         List<Condition> conditions = conditionService.getAllConditions();
         List<ConditionDTO> conditionDTOs = conditions.stream()
                 .map(conditionService::convertToDTO)
-                .collect(Collectors.toList());
+                .toList();
         return ResponseEntity.ok(conditionDTOs);
     }
 

@@ -17,7 +17,8 @@ import java.util.List;
 @Service
 public class ConditionService {
 
-    private final String notFoundMsg = "Condition not found";
+    private static final String NOT_FOUND_MSG = "Condition not found";
+    private static final String ALR_EXISTS_MSG = "Condition with this text already exists";
     private final ConditionRepository conditionRepository;
     private final CacheComponent cache;
     private final CustomLogger customLogger;
@@ -37,7 +38,7 @@ public class ConditionService {
 
         for (ConditionDTO conditionDTO : conditionDTOs) {
             if (conditionRepository.existsByText(conditionDTO.getText())) {
-                throw new BadRequestException("Condition with this text already exists");
+                throw new BadRequestException(ALR_EXISTS_MSG);
             }
 
             Condition condition = convertToEntity(conditionDTO);
@@ -51,7 +52,7 @@ public class ConditionService {
     public Condition createCondition(Condition condition) {
         customLogger.info("Creating condition");
         if (conditionRepository.existsByText(condition.getText())) {
-            throw new BadRequestException("Condition with this text already exists");
+            throw new BadRequestException(ALR_EXISTS_MSG);
         }
         Condition savedCondition = conditionRepository.save(condition);
         cacheKey = savedCondition.getId().toString();
@@ -64,10 +65,10 @@ public class ConditionService {
         customLogger.info("Updating condition with id: " + id);
         Condition existingCondition = getConditionById(id);
         if (existingCondition == null) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         if (conditionRepository.existsByTextAndIdNot(conditionDTO.getText(), id)) {
-            throw new BadRequestException("Condition with this text already exists");
+            throw new BadRequestException(ALR_EXISTS_MSG);
         }
         existingCondition.setText(conditionDTO.getText());
         Condition savedCondition = conditionRepository.save(existingCondition);
@@ -80,7 +81,7 @@ public class ConditionService {
     public boolean deleteCondition(Long id) {
         customLogger.info("Deleting condition with id: " + id);
         if (!conditionRepository.existsById(id)) {
-            throw new BadRequestException(notFoundMsg);
+            throw new BadRequestException(NOT_FOUND_MSG);
         }
         conditionRepository.deleteById(id);
         cacheKey = id.toString();
@@ -101,7 +102,7 @@ public class ConditionService {
             if (condition != null) {
                 cache.put(cacheKey, condition);
             } else {
-                throw new BadRequestException(notFoundMsg);
+                throw new BadRequestException(NOT_FOUND_MSG);
             }
             return condition;
         } catch (Exception e) {
@@ -151,7 +152,7 @@ public class ConditionService {
             }
             return condition;
         } catch (Exception e) {
-            throw new InternalServerErrorException("Condition with this TEXT doesnt exists");
+            throw new InternalServerErrorException(NOT_FOUND_MSG);
         }
     }
 }

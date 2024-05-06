@@ -12,7 +12,6 @@ import com.app.weather.repository.WeatherRepository;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -214,7 +213,7 @@ public class WeatherService {
             List<Weather> weathers = weatherRepository.findByTemperature(temperature);
             return weathers.stream()
                     .map(this::convertToDTO)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to find weathers by temperature");
         }
@@ -226,7 +225,7 @@ public class WeatherService {
             List<Weather> weathers = weatherRepository.findByConditionText(conditionText);
             return weathers.stream()
                     .map(this::convertToDTO)
-                    .collect(Collectors.toList());
+                    .toList();
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to find weathers by condition text");
         }
