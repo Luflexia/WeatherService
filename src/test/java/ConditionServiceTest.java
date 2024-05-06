@@ -210,7 +210,11 @@ class ConditionServiceTest {
         when(conditionRepository.findById(existingCondition.getId())).thenReturn(Optional.of(existingCondition));
         when(conditionRepository.existsByTextAndIdNot("Cloudy", existingCondition.getId())).thenReturn(true);
 
-        assertThrows(BadRequestException.class, () -> conditionService.updateCondition(existingCondition.getId(), conditionDTO));
+        assertThrows(BadRequestException.class, () -> {
+            conditionService.updateCondition(existingCondition.getId(), conditionDTO);
+            throw new RuntimeException();
+        });
+
         verify(conditionRepository, never()).save(any(Condition.class));
     }
 
