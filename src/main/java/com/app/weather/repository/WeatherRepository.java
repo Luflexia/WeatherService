@@ -12,8 +12,6 @@ import java.util.List;
 public interface WeatherRepository extends JpaRepository<Weather, Long> {
     Weather findByCity(String city);
 
-    List<Weather> findByCondition(Condition condition);
-
     boolean existsByCity(String city);
 
     boolean existsByCityAndIdNot(String city, Long id);

@@ -23,6 +23,7 @@ public class ConditionService {
     private final CacheComponent cache;
     private final CustomLogger customLogger;
     private String cacheKey;
+    private ConditionService self;
 
     @Autowired
     public ConditionService(ConditionRepository conditionRepository, CacheComponent cache, CustomLogger customLogger) {
@@ -40,11 +41,9 @@ public class ConditionService {
             if (conditionRepository.existsByText(conditionDTO.getText())) {
                 throw new BadRequestException(ALR_EXISTS_MSG);
             }
-
             Condition condition = convertToEntity(conditionDTO);
             createdConditions.add(conditionRepository.save(condition));
         }
-
         return createdConditions;
     }
 
@@ -63,7 +62,7 @@ public class ConditionService {
     @Transactional
     public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
         customLogger.info("Updating condition with id: " + id);
-        Condition existingCondition = getConditionById(id);
+        Condition existingCondition = self.getConditionById(id); // вызываем транзакционный метод через внедренную зависимость
         if (existingCondition == null) {
             throw new BadRequestException(NOT_FOUND_MSG);
         }

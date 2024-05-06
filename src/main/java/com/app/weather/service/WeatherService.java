@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class WeatherService {
     private static final String NOT_FOUND_MSG = "Weather not found";
+    private static final String ALR_EXISTS_MSG = "Weather for this city already exists";
     private final WeatherRepository weatherRepository;
     private final ConditionService conditionService;
     private final CacheComponent cache;
@@ -39,7 +40,7 @@ public class WeatherService {
         customLogger.info("Creating weather with condition");
         Weather existingWeatherTemp = weatherRepository.findByCity(weatherDTO.getCity());
         if (weatherRepository.existsByCity(weatherDTO.getCity())) {
-            throw new InternalServerErrorException("Weather for this city already exists");
+            throw new InternalServerErrorException(ALR_EXISTS_MSG);
         }
 
         try {
@@ -82,7 +83,7 @@ public class WeatherService {
             throw new BadRequestException(NOT_FOUND_MSG);
         }
         if (weatherRepository.existsByCityAndIdNot(weatherDTO.getCity(), id)) {
-            throw new BadRequestException("Weather for this city already exists");
+            throw new BadRequestException(ALR_EXISTS_MSG);
         }
         try {
             existingWeather.setDate(new Timestamp(System.currentTimeMillis()));
@@ -117,7 +118,7 @@ public class WeatherService {
 
         for (WeatherDTO weatherDTO : weatherDTOs) {
             if (weatherRepository.existsByCity(weatherDTO.getCity())) {
-                throw new BadRequestException("Weather for this city already exists");
+                throw new BadRequestException(ALR_EXISTS_MSG);
             }
 
             Weather weather = convertToEntity(weatherDTO);
