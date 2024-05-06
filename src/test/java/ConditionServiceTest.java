@@ -10,11 +10,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -37,7 +35,7 @@ class ConditionServiceTest {
     @Test
     void testCreateCondition() {
         Condition condition = new Condition();
-        condition.setId(1L); // Установить значение id для объекта Condition
+        condition.setId(1L);
         condition.setText("Sunny");
         when(conditionRepository.save(condition)).thenReturn(condition);
 
@@ -172,5 +170,68 @@ class ConditionServiceTest {
         verify(conditionRepository, times(1)).findByText(text);
         verify(cache, never()).put(anyString(), any(Condition.class));
     }
+
+    @Test
+    void testCreateConditionBulk() {
+        List<ConditionDTO> conditionDTOs = new ArrayList<>();
+        conditionDTOs.add(new ConditionDTO(null, "Sunny"));
+        conditionDTOs.add(new ConditionDTO(null, "Cloudy"));
+        conditionDTOs.add(new ConditionDTO(null, "Rainy"));
+
+        when(conditionRepository.existsByText(anyString())).thenReturn(false);
+        when(conditionRepository.save(any(Condition.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<Condition> createdConditions = conditionService.createConditionBulk(conditionDTOs);
+
+        assertEquals(3, createdConditions.size());
+        verify(conditionRepository, times(3)).save(any(Condition.class));
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
+    @Test
+    void testUpdateNonExistingConditionThrowsBadRequestException() {
+        ConditionDTO conditionDTO = new ConditionDTO(null, "Cloudy");
+
+        when(conditionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.updateCondition(1L, conditionDTO));
+        verify(conditionRepository, never()).save(any(Condition.class));
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
+    @Test
+    void testUpdateConditionWithExistingValueThrowsBadRequestException() {
+        Condition existingCondition = new Condition();
+        existingCondition.setId(1L);
+        existingCondition.setText("Sunny");
+
+        ConditionDTO conditionDTO = new ConditionDTO(null, "Cloudy");
+
+        when(conditionRepository.findById(existingCondition.getId())).thenReturn(Optional.of(existingCondition));
+        when(conditionRepository.existsByTextAndIdNot("Cloudy", existingCondition.getId())).thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> conditionService.updateCondition(existingCondition.getId(), conditionDTO));
+        verify(conditionRepository, never()).save(any(Condition.class));
+    }
+
+    @Test
+    void testDeleteNonExistingConditionThrowsBadRequestException() {
+        when(conditionRepository.existsById(1L)).thenReturn(false);
+
+        assertThrows(BadRequestException.class, () -> conditionService.deleteCondition(1L));
+        verify(conditionRepository, never()).deleteById(anyLong());
+        verify(cache, never()).remove(anyString());
+    }
+
+    @Test
+    void testGetConditionByTextWithNonExistingTextThrowsInternalServerErrorException() {
+        String text = "Sunny";
+        when(conditionRepository.findByText(text)).thenThrow(new RuntimeException());
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.getConditionByText(text));
+        verify(conditionRepository, times(1)).findByText(text);
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
 
 }

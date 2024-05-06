@@ -6,6 +6,7 @@ import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import com.app.weather.component.CacheComponent;
 import com.app.weather.component.CustomLogger;
+import com.app.weather.repository.ConditionRepository;
 import com.app.weather.repository.WeatherRepository;
 import com.app.weather.service.ConditionService;
 import com.app.weather.service.WeatherService;
@@ -25,6 +26,8 @@ class WeatherServiceTest {
 
     @Mock
     private WeatherRepository weatherRepository;
+    @Mock
+    private ConditionRepository conditionRepository;
 
     @Mock
     private ConditionService conditionService;
@@ -44,6 +47,93 @@ class WeatherServiceTest {
     void setUp() {
         MockitoAnnotations.initMocks(this);
         weatherService = new WeatherService(weatherRepository, conditionService, cacheComponent, customLogger);
+    }
+
+    @Test
+    void testCreateWeatherBulkSuccess() {
+        List<WeatherDTO> weatherDTOs = new ArrayList<>();
+        WeatherDTO weatherDTO1 = new WeatherDTO();
+        weatherDTO1.setCity("London");
+        weatherDTO1.setTemperature(20.0);
+        weatherDTO1.setCondition(new ConditionDTO());
+        weatherDTO1.getCondition().setText("Cloudy");
+        weatherDTOs.add(weatherDTO1);
+
+        WeatherDTO weatherDTO2 = new WeatherDTO();
+        weatherDTO2.setCity("Paris");
+        weatherDTO2.setTemperature(25.0);
+        weatherDTO2.setCondition(new ConditionDTO());
+        weatherDTO2.getCondition().setText("Sunny");
+        weatherDTOs.add(weatherDTO2);
+
+        Condition condition1 = new Condition();
+        condition1.setText("Cloudy");
+        Condition condition2 = new Condition();
+        condition2.setText("Sunny");
+
+        when(conditionService.getConditionByText("Cloudy")).thenReturn(condition1);
+        when(conditionService.getConditionByText("Sunny")).thenReturn(condition2);
+        when(weatherRepository.save(any(Weather.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        List<Weather> createdWeathers = weatherService.createWeatherBulk(weatherDTOs);
+
+        assertEquals(2, createdWeathers.size());
+        verify(conditionService, times(2)).getConditionByText(anyString());
+        verify(weatherRepository, times(2)).save(any(Weather.class));
+    }
+
+    @Test
+    void testCreateWeatherBulkCityAlreadyExists() {
+        List<WeatherDTO> weatherDTOs = new ArrayList<>();
+        WeatherDTO weatherDTO1 = new WeatherDTO();
+        weatherDTO1.setCity("London");
+        weatherDTO1.setTemperature(20.0);
+        weatherDTO1.setCondition(new ConditionDTO());
+        weatherDTO1.getCondition().setText("Cloudy");
+        weatherDTOs.add(weatherDTO1);
+
+        WeatherDTO weatherDTO2 = new WeatherDTO();
+        weatherDTO2.setCity("London");
+        weatherDTO2.setTemperature(25.0);
+        weatherDTO2.setCondition(new ConditionDTO());
+        weatherDTO2.getCondition().setText("Sunny");
+        weatherDTOs.add(weatherDTO2);
+
+        when(weatherRepository.existsByCity("London")).thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> weatherService.createWeatherBulk(weatherDTOs));
+        verify(weatherRepository, times(1)).existsByCity("London");
+        verify(conditionService, never()).getConditionByText(anyString());
+        verify(weatherRepository, never()).save(any(Weather.class));
+    }
+
+    @Test
+    void testCreateWeatherBulkTransaction() {
+        List<WeatherDTO> weatherDTOs = new ArrayList<>();
+        WeatherDTO weatherDTO1 = new WeatherDTO();
+        weatherDTO1.setCity("London");
+        weatherDTO1.setTemperature(20.0);
+        weatherDTO1.setCondition(new ConditionDTO());
+        weatherDTO1.getCondition().setText("Cloudy");
+        weatherDTOs.add(weatherDTO1);
+
+        WeatherDTO weatherDTO2 = new WeatherDTO();
+        weatherDTO2.setCity("Paris");
+        weatherDTO2.setTemperature(25.0);
+        weatherDTO2.setCondition(new ConditionDTO());
+        weatherDTO2.getCondition().setText("Sunny");
+        weatherDTOs.add(weatherDTO2);
+
+        Condition condition1 = new Condition();
+        condition1.setText("Cloudy");
+
+        when(conditionService.getConditionByText("Cloudy")).thenReturn(condition1);
+        when(conditionService.getConditionByText("Sunny")).thenThrow(new RuntimeException());
+        when(weatherRepository.save(any(Weather.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        assertThrows(RuntimeException.class, () -> weatherService.createWeatherBulk(weatherDTOs));
+        verify(conditionService, times(2)).getConditionByText(anyString());
+        verify(weatherRepository, times(1)).save(any(Weather.class));
     }
 
     @Test

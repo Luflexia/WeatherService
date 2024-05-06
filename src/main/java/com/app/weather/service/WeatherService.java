@@ -113,7 +113,6 @@ public class WeatherService {
 
     @Transactional
     public List<Weather> createWeatherBulk(List<WeatherDTO> weatherDTOs) {
-        customLogger.info("Creating bulk of weathers with conditions");
         List<Weather> createdWeathers = new ArrayList<>();
 
         for (WeatherDTO weatherDTO : weatherDTOs) {
@@ -125,10 +124,6 @@ public class WeatherService {
             weather.setDate(new Timestamp(System.currentTimeMillis()));
 
             Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
-            if (condition == null) {
-                condition = conditionService.convertToEntity(weatherDTO.getCondition());
-                condition = conditionService.createCondition(condition);
-            }
 
             weather.setCondition(condition);
             condition.addWeather(weather);
@@ -150,7 +145,7 @@ public class WeatherService {
         cacheKey = weather.getCity();
         cache.remove(cacheKey);
     }
-    
+
     public Weather getWeatherById(Long id) {
         customLogger.info("Getting weather by id: " + id);
         try {
