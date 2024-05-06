@@ -1,5 +1,4 @@
 package com.app.weather.repository;
-import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;

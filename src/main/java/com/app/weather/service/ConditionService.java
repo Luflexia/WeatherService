@@ -30,6 +30,7 @@ public class ConditionService {
         this.conditionRepository = conditionRepository;
         this.cache = cache;
         this.customLogger = customLogger;
+        this.self = self;
     }
 
     @Transactional
@@ -62,7 +63,7 @@ public class ConditionService {
     @Transactional
     public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
         customLogger.info("Updating condition with id: " + id);
-        Condition existingCondition = self.getConditionById(id); // вызываем транзакционный метод через внедренную зависимость
+        Condition existingCondition = self.getConditionById(id);
         if (existingCondition == null) {
             throw new BadRequestException(NOT_FOUND_MSG);
         }

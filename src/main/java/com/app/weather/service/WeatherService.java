@@ -38,7 +38,7 @@ public class WeatherService {
     @Transactional
     public Weather createWeatherWithCondition(WeatherDTO weatherDTO) {
         customLogger.info("Creating weather with condition");
-        Weather existingWeatherTemp = weatherRepository.findByCity(weatherDTO.getCity());
+        weatherRepository.findByCity(weatherDTO.getCity());
         if (weatherRepository.existsByCity(weatherDTO.getCity())) {
             throw new InternalServerErrorException(ALR_EXISTS_MSG);
         }
