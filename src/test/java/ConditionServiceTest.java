@@ -18,7 +18,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ConditionServiceTest {
+class ConditionServiceTest {
 
     @Mock
     private ConditionRepository conditionRepository;
@@ -29,13 +29,13 @@ public class ConditionServiceTest {
     private ConditionService conditionService;
 
     @BeforeEach
-    public void setup() {
+    void setup() {
         MockitoAnnotations.initMocks(this);
         conditionService = new ConditionService(conditionRepository, cache, customLogger);
     }
 
     @Test
-    public void testCreateCondition() {
+    void testCreateCondition() {
         Condition condition = new Condition();
         condition.setId(1L); // Установить значение id для объекта Condition
         condition.setText("Sunny");
@@ -49,7 +49,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testCreateConditionWithExistingTextThrowsBadRequestException() {
+    void testCreateConditionWithExistingTextThrowsBadRequestException() {
         Condition condition = new Condition();
         condition.setText("Sunny");
 
@@ -61,8 +61,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testUpdateCondition() {
-        // Шаг 1: Создайте переменную для хранения объекта Condition, который будет возвращен из метода getConditionById(...)
+    void testUpdateCondition() {
         Condition existingCondition = new Condition();
         existingCondition.setId(1L);
         existingCondition.setText("Sunny");
@@ -80,7 +79,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testUpdateConditionWithNonExistingIdThrowsBadRequestException() {
+    void testUpdateConditionWithNonExistingIdThrowsBadRequestException() {
         ConditionDTO conditionDTO = new ConditionDTO();
         conditionDTO.setText("Cloudy");
 
@@ -92,7 +91,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testDeleteCondition() {
+    void testDeleteCondition() {
         Condition condition = new Condition();
         condition.setId(1L);
         condition.setText("Test condition");
@@ -111,7 +110,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetConditionById() {
+    void testGetConditionById() {
         Condition condition = new Condition();
         condition.setId(1L);
         condition.setText("Sunny");
@@ -126,7 +125,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetConditionByIdWithNonExistingIdThrowsBadRequestException() {
+    void testGetConditionByIdWithNonExistingIdThrowsBadRequestException() {
         Long id = 1L;
 
         when(conditionRepository.findById(id)).thenReturn(Optional.empty());
@@ -136,7 +135,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetAllConditions() {
+    void testGetAllConditions() {
         List<Condition> conditions = new ArrayList<>();
         conditions.add(new Condition());
         conditions.add(new Condition());
@@ -149,7 +148,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetConditionByText() {
+    void testGetConditionByText() {
         String text = "Sunny";
         Condition condition = new Condition();
         condition.setId(1L); // устанавливаем идентификатор
@@ -165,7 +164,7 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetConditionByTextWithNonExistingTextReturnsNull() {
+    void testGetConditionByTextWithNonExistingTextReturnsNull() {
         String text = "Sunny";
         when(conditionRepository.findByText(text)).thenReturn(null);
         Condition condition = conditionService.getConditionByText(text);

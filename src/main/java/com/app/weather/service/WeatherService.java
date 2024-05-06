@@ -150,8 +150,7 @@ public class WeatherService {
         cacheKey = weather.getCity();
         cache.remove(cacheKey);
     }
-
-    @Transactional
+    
     public Weather getWeatherById(Long id) {
         customLogger.info("Getting weather by id: " + id);
         try {
