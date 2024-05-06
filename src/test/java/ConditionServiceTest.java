@@ -165,13 +165,13 @@ public class ConditionServiceTest {
     }
 
     @Test
-    public void testGetConditionByTextWithNonExistingTextThrowsInternalServerErrorException() {
+    public void testGetConditionByTextWithNonExistingTextReturnsNull() {
         String text = "Sunny";
-
         when(conditionRepository.findByText(text)).thenReturn(null);
-
-        assertThrows(InternalServerErrorException.class, () -> conditionService.getConditionByText(text));
+        Condition condition = conditionService.getConditionByText(text);
+        assertNull(condition);
         verify(conditionRepository, times(1)).findByText(text);
         verify(cache, never()).put(anyString(), any(Condition.class));
     }
+
 }
