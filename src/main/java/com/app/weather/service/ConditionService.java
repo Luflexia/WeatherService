@@ -23,14 +23,12 @@ public class ConditionService {
     private final CacheComponent cache;
     private final CustomLogger customLogger;
     private String cacheKey;
-    private ConditionService self;
 
     @Autowired
     public ConditionService(ConditionRepository conditionRepository, CacheComponent cache, CustomLogger customLogger) {
         this.conditionRepository = conditionRepository;
         this.cache = cache;
         this.customLogger = customLogger;
-        this.self = self;
     }
 
     @Transactional
@@ -63,7 +61,7 @@ public class ConditionService {
     @Transactional
     public Condition updateCondition(Long id, ConditionDTO conditionDTO) {
         customLogger.info("Updating condition with id: " + id);
-        Condition existingCondition = self.getConditionById(id);
+        Condition existingCondition = getConditionById(id);
         if (existingCondition == null) {
             throw new BadRequestException(NOT_FOUND_MSG);
         }

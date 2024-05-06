@@ -1,0 +1,177 @@
+import com.app.weather.component.CacheComponent;
+import com.app.weather.component.CustomLogger;
+import com.app.weather.dto.ConditionDTO;
+import com.app.weather.exceptions.BadRequestException;
+import com.app.weather.exceptions.InternalServerErrorException;
+import com.app.weather.model.Condition;
+import com.app.weather.repository.ConditionRepository;
+import com.app.weather.service.ConditionService;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
+
+public class ConditionServiceTest {
+
+    @Mock
+    private ConditionRepository conditionRepository;
+    @Mock
+    private CacheComponent cache;
+    @Mock
+    private CustomLogger customLogger;
+    private ConditionService conditionService;
+
+    @BeforeEach
+    public void setup() {
+        MockitoAnnotations.initMocks(this);
+        conditionService = new ConditionService(conditionRepository, cache, customLogger);
+    }
+
+    @Test
+    public void testCreateCondition() {
+        Condition condition = new Condition();
+        condition.setId(1L); // Установить значение id для объекта Condition
+        condition.setText("Sunny");
+        when(conditionRepository.save(condition)).thenReturn(condition);
+
+        Condition createdCondition = conditionService.createCondition(condition);
+
+        assertEquals(condition, createdCondition);
+        verify(conditionRepository, times(1)).save(condition);
+        verify(cache, times(1)).put(condition.getId().toString(), createdCondition);
+    }
+
+    @Test
+    public void testCreateConditionWithExistingTextThrowsBadRequestException() {
+        Condition condition = new Condition();
+        condition.setText("Sunny");
+
+        when(conditionRepository.existsByText(condition.getText())).thenReturn(true);
+
+        assertThrows(BadRequestException.class, () -> conditionService.createCondition(condition));
+        verify(conditionRepository, never()).save(condition);
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
+    @Test
+    public void testUpdateCondition() {
+        // Шаг 1: Создайте переменную для хранения объекта Condition, который будет возвращен из метода getConditionById(...)
+        Condition existingCondition = new Condition();
+        existingCondition.setId(1L);
+        existingCondition.setText("Sunny");
+
+        ConditionDTO conditionDTO = new ConditionDTO();
+        conditionDTO.setText("Cloudy");
+
+        when(conditionRepository.findById(existingCondition.getId())).thenReturn(Optional.of(existingCondition));
+        when(conditionRepository.save(existingCondition)).thenReturn(existingCondition);
+
+        Condition updatedCondition = conditionService.updateCondition(existingCondition.getId(), conditionDTO);
+
+        assertEquals(conditionDTO.getText(), updatedCondition.getText());
+        verify(conditionRepository, times(1)).save(existingCondition);
+    }
+
+    @Test
+    public void testUpdateConditionWithNonExistingIdThrowsBadRequestException() {
+        ConditionDTO conditionDTO = new ConditionDTO();
+        conditionDTO.setText("Cloudy");
+
+        when(conditionRepository.findById(1L)).thenReturn(Optional.empty());
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.updateCondition(1L, conditionDTO));
+        verify(conditionRepository, never()).save(any(Condition.class));
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
+    @Test
+    public void testDeleteCondition() {
+        Condition condition = new Condition();
+        condition.setId(1L);
+        condition.setText("Test condition");
+        when(conditionRepository.save(condition)).thenReturn(condition);
+        when(conditionRepository.findById(condition.getId())).thenReturn(Optional.of(condition));
+        when(conditionRepository.existsById(condition.getId())).thenReturn(true);
+
+        conditionService.createCondition(condition);
+
+        Long id = condition.getId();
+
+        conditionService.deleteCondition(id);
+
+        verify(conditionRepository, times(1)).deleteById(id);
+        verify(cache, times(1)).remove(id.toString());
+    }
+
+    @Test
+    public void testGetConditionById() {
+        Condition condition = new Condition();
+        condition.setId(1L);
+        condition.setText("Sunny");
+
+        when(conditionRepository.findById(condition.getId())).thenReturn(Optional.of(condition));
+
+        Condition foundCondition = conditionService.getConditionById(condition.getId());
+
+        assertEquals(condition, foundCondition);
+        verify(conditionRepository, times(1)).findById(condition.getId());
+        verify(cache, times(1)).put(condition.getId().toString(), foundCondition);
+    }
+
+    @Test
+    public void testGetConditionByIdWithNonExistingIdThrowsBadRequestException() {
+        Long id = 1L;
+
+        when(conditionRepository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.getConditionById(id));
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+
+    @Test
+    public void testGetAllConditions() {
+        List<Condition> conditions = new ArrayList<>();
+        conditions.add(new Condition());
+        conditions.add(new Condition());
+
+        when(conditionRepository.findAll()).thenReturn(conditions);
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.getAllConditions());
+
+        verify(conditionRepository, times(1)).findAll();
+    }
+
+    @Test
+    public void testGetConditionByText() {
+        String text = "Sunny";
+        Condition condition = new Condition();
+        condition.setId(1L); // устанавливаем идентификатор
+        condition.setText(text);
+
+        when(conditionRepository.findByText(text)).thenReturn(condition);
+
+        Condition foundCondition = conditionService.getConditionByText(text);
+
+        assertEquals(condition, foundCondition);
+        verify(conditionRepository, times(1)).findByText(text);
+        verify(cache, times(1)).put(foundCondition.getId().toString(), foundCondition);
+    }
+
+    @Test
+    public void testGetConditionByTextWithNonExistingTextThrowsInternalServerErrorException() {
+        String text = "Sunny";
+
+        when(conditionRepository.findByText(text)).thenReturn(null);
+
+        assertThrows(InternalServerErrorException.class, () -> conditionService.getConditionByText(text));
+        verify(conditionRepository, times(1)).findByText(text);
+        verify(cache, never()).put(anyString(), any(Condition.class));
+    }
+}
