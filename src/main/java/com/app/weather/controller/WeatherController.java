@@ -7,6 +7,7 @@ import com.app.weather.service.WeatherService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/weather")
@@ -20,13 +21,22 @@ public class WeatherController {
         this.customLogger = customLogger;
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<List<WeatherDTO>> createWeatherBulk(@RequestBody List<WeatherDTO> weatherDTOs) {
+        customLogger.info("Creating bulk of weathers");
+        List<Weather> createdWeathers = weatherService.createWeatherBulk(weatherDTOs);
+        return ResponseEntity.ok(createdWeathers.stream()
+                .map(weatherService::convertToDTO)
+                .collect(Collectors.toList()));
+    }
+
     @GetMapping
     public ResponseEntity<List<WeatherDTO>> getAllWeathers() {
         customLogger.info("Получение всех weather");
         List<Weather> weathers = weatherService.getAllWeathers();
         List<WeatherDTO> weatherDTOs = weathers.stream()
                 .map(weatherService::convertToDTO)
-                .toList();
+                .collect(Collectors.toList());
         return ResponseEntity.ok(weatherDTOs);
     }
 

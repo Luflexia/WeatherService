@@ -7,6 +7,7 @@ import com.app.weather.service.ConditionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/conditions")
@@ -20,13 +21,22 @@ public class ConditionController {
         this.customLogger = customLogger;
     }
 
+    @PostMapping("/bulk")
+    public ResponseEntity<List<ConditionDTO>> createConditionBulk(@RequestBody List<ConditionDTO> conditionDTOs) {
+        customLogger.info("Creating bulk of conditions");
+        List<Condition> createdConditions = conditionService.createConditionBulk(conditionDTOs);
+        return ResponseEntity.ok(createdConditions.stream()
+                .map(conditionService::convertToDTO)
+                .collect(Collectors.toList()));
+    }
+
     @GetMapping
     public ResponseEntity<List<ConditionDTO>> getAllConditions() {
         customLogger.info("Получение всех condition");
         List<Condition> conditions = conditionService.getAllConditions();
         List<ConditionDTO> conditionDTOs = conditions.stream()
                 .map(conditionService::convertToDTO)
-                .toList();
+                .collect(Collectors.toList());
         return ResponseEntity.ok(conditionDTOs);
     }
 

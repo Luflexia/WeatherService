@@ -1,4 +1,5 @@
 package com.app.weather.repository;
+import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -10,6 +11,8 @@ import java.util.List;
 @Repository
 public interface WeatherRepository extends JpaRepository<Weather, Long> {
     Weather findByCity(String city);
+
+    List<Weather> findByCondition(Condition condition);
 
     boolean existsByCity(String city);
 

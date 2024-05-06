@@ -9,9 +9,11 @@ import com.app.weather.exceptions.InternalServerErrorException;
 import com.app.weather.model.Condition;
 import com.app.weather.model.Weather;
 import com.app.weather.repository.WeatherRepository;
-import org.springframework.context.ApplicationContext;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,23 +26,23 @@ public class WeatherService {
     private final CacheComponent cache;
     private final CustomLogger customLogger;
     private String cacheKey;
-    private final ApplicationContext applicationContext;
 
     @Autowired
-    public WeatherService(WeatherRepository weatherRepository, ConditionService conditionService, CacheComponent cache, CustomLogger customLogger, ApplicationContext applicationContext) {
+    public WeatherService(WeatherRepository weatherRepository, ConditionService conditionService, CacheComponent cache, CustomLogger customLogger) {
         this.weatherRepository = weatherRepository;
         this.conditionService = conditionService;
         this.cache = cache;
         this.customLogger = customLogger;
-        this.applicationContext = applicationContext;
     }
 
     @Transactional
     public Weather createWeatherWithCondition(WeatherDTO weatherDTO) {
         customLogger.info("Creating weather with condition");
+        Weather existingWeatherTemp = weatherRepository.findByCity(weatherDTO.getCity());
         if (weatherRepository.existsByCity(weatherDTO.getCity())) {
-            throw new BadRequestException("Weather for this city already exists");
+            throw new InternalServerErrorException("Weather for this city already exists");
         }
+
         try {
             Weather weather = convertToEntity(weatherDTO);
             weather.setDate(new Timestamp(System.currentTimeMillis()));
@@ -52,11 +54,7 @@ public class WeatherService {
             if (existingWeather != null) {
                 return existingWeather;
             }
-            Weather weatherFromDb = weatherRepository.findByCity(weather.getCity());
-            if (weatherFromDb != null) {
-                cache.put(cacheKey, weatherFromDb);
-                return weatherFromDb;
-            }
+
             // Проверяем, существует ли условие, если нет, то создаем его
             Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
             if (condition == null) {
@@ -80,7 +78,7 @@ public class WeatherService {
     @Transactional
     public Weather updateWeather(Long id, WeatherDTO weatherDTO) {
         customLogger.info("Updating weather with id: " + id);
-        Weather existingWeather = getWeatherService().getWeatherById(id);
+        Weather existingWeather = getWeatherById(id);
         if (existingWeather == null) {
             throw new BadRequestException(NOT_FOUND_MSG);
         }
@@ -114,9 +112,37 @@ public class WeatherService {
     }
 
     @Transactional
+    public List<Weather> createWeatherBulk(List<WeatherDTO> weatherDTOs) {
+        customLogger.info("Creating bulk of weathers with conditions");
+        List<Weather> createdWeathers = new ArrayList<>();
+
+        for (WeatherDTO weatherDTO : weatherDTOs) {
+            if (weatherRepository.existsByCity(weatherDTO.getCity())) {
+                throw new BadRequestException("Weather for this city already exists");
+            }
+
+            Weather weather = convertToEntity(weatherDTO);
+            weather.setDate(new Timestamp(System.currentTimeMillis()));
+
+            Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
+            if (condition == null) {
+                condition = conditionService.convertToEntity(weatherDTO.getCondition());
+                condition = conditionService.createCondition(condition);
+            }
+
+            weather.setCondition(condition);
+            condition.addWeather(weather);
+
+            createdWeathers.add(weatherRepository.save(weather));
+        }
+
+        return createdWeathers;
+    }
+
+    @Transactional
     public void deleteWeather(Long id) {
         customLogger.info("Deleting weather with id: {}" + id);
-        Weather weather = getWeatherService().getWeatherById(id);
+        Weather weather = getWeatherById(id);
         if (weather == null) {
             throw new BadRequestException(NOT_FOUND_MSG);
         }
@@ -188,7 +214,7 @@ public class WeatherService {
             List<Weather> weathers = weatherRepository.findByTemperature(temperature);
             return weathers.stream()
                     .map(this::convertToDTO)
-                    .toList();
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to find weathers by temperature");
         }
@@ -200,13 +226,9 @@ public class WeatherService {
             List<Weather> weathers = weatherRepository.findByConditionText(conditionText);
             return weathers.stream()
                     .map(this::convertToDTO)
-                    .toList();
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             throw new InternalServerErrorException("Failed to find weathers by condition text");
         }
-    }
-
-    private WeatherService getWeatherService() {
-        return applicationContext.getBean(WeatherService.class);
     }
 }
