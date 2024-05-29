@@ -9,8 +9,8 @@ services:
       - my-network
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: 1102
-      POSTGRES_DB: weather_db
+      POSTGRES_PASSWORD: qhIsHHJqbDXsnXydbORiworFXQXrRIEv
+      POSTGRES_DB: railway
     volumes:
       - E:/postgres-data:/var/lib/postgresql/data
     ports:
