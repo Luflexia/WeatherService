@@ -11,10 +11,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Download Docker image from GitHub Artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: backend-service
           path: backend-service.tar
@@ -31,6 +31,8 @@ jobs:
         run: render login --api-key ${{ secrets.RENDER_API_KEY }}
 
       - name: Deploy to Render.com
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           render service create \
             --name backend-service \
