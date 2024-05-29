@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  db-container:
+    image: postgres:latest
+    container_name: db-container
+    restart: always
+    networks:
+      - my-network
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1102
+      POSTGRES_DB: weather_db
+    volumes:
+      - E:/postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  backend-service:
+    build: ./
+    image: backend-service:latest
+    container_name: backend-service
+    restart: always
+    networks:
+      - my-network
+    depends_on:
+      - db-container
+    environment:
+      DATABASE_URL: db-container:5432
+    volumes:
+      - E:/app-logs:/app/logs
+    ports:
+      - "8080:8080"
+
+networks:
+  my-network:
+    driver: bridge

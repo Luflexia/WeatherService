@@ -11,7 +11,9 @@ import com.app.weather.model.Weather;
 import com.app.weather.repository.WeatherRepository;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -75,6 +77,21 @@ public class WeatherService {
         }
     }
 
+    public Weather getWeatherByCity(String city) {
+        customLogger.info("Getting weather by city: " + city);
+        try {
+            Weather weather = weatherRepository.findByCity(city);
+            if (weather == null) {
+                throw new BadRequestException(NOT_FOUND_MSG);
+            }
+            cacheKey = weather.getCity();
+            cache.put(cacheKey, weather);
+            return weather;
+        } catch (Exception e) {
+            throw new InternalServerErrorException("Weather with this city doesnt exists");
+        }
+    }
+
     @Transactional
     public Weather updateWeather(Long id, WeatherDTO weatherDTO) {
         customLogger.info("Updating weather with id: " + id);
@@ -88,6 +105,7 @@ public class WeatherService {
         try {
             existingWeather.setDate(new Timestamp(System.currentTimeMillis()));
             existingWeather.setTemperature(weatherDTO.getTemperature());
+            existingWeather.setCity(weatherDTO.getCity()); // добавлено обновление поля city
             cacheKey = existingWeather.getCity();
 
             // Проверяем, существует ли уже погода для этого города
@@ -100,6 +118,7 @@ public class WeatherService {
             Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
             if (condition == null) {
                 condition = conditionService.convertToEntity(weatherDTO.getCondition());
+                condition = conditionService.createCondition(condition); // добавлено сохранение нового условия в базу данных
             }
             existingWeather.setCondition(condition);
 
@@ -113,23 +132,35 @@ public class WeatherService {
 
     @Transactional
     public List<Weather> createWeatherBulk(List<WeatherDTO> weatherDTOs) {
-        List<Weather> createdWeathers = new ArrayList<>();
+        customLogger.info("Creating bulk of weathers");
 
-        for (WeatherDTO weatherDTO : weatherDTOs) {
-            if (weatherRepository.existsByCity(weatherDTO.getCity())) {
-                throw new BadRequestException(ALR_EXISTS_MSG);
-            }
+        List<Weather> weathers = weatherDTOs.stream()
+                .filter(weatherDTO -> {
+                    if (weatherRepository.existsByCity(weatherDTO.getCity())) {
+                        throw new BadRequestException(ALR_EXISTS_MSG);
+                    }
+                    return true;
+                })
+                .map(weatherDTO -> {
+                    Weather weather = convertToEntity(weatherDTO);
+                    weather.setDate(new Timestamp(System.currentTimeMillis()));
 
-            Weather weather = convertToEntity(weatherDTO);
-            weather.setDate(new Timestamp(System.currentTimeMillis()));
+                    Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
+                    if (condition == null) {
+                        condition = conditionService.convertToEntity(weatherDTO.getCondition());
+                        condition = conditionService.createCondition(condition);
+                    }
 
-            Condition condition = conditionService.getConditionByText(weatherDTO.getCondition().getText());
+                    weather.setCondition(condition);
+                    return weather;
+                })
+                .collect(Collectors.toList());
 
-            weather.setCondition(condition);
-            condition.addWeather(weather);
-
-            createdWeathers.add(weatherRepository.save(weather));
-        }
+        List<Weather> createdWeathers = weatherRepository.saveAll(weathers);
+        createdWeathers.forEach(weather -> {
+            cacheKey = weather.getCity();
+            cache.put(cacheKey, weather);
+        });
 
         return createdWeathers;
     }
@@ -166,6 +197,7 @@ public class WeatherService {
         customLogger.info("Getting all weathers");
         try {
             List<Weather> weathers = weatherRepository.findAll();
+            weathers.sort(Comparator.comparing(Weather::getCity));
             weathers.forEach(weather -> {
                 cacheKey = weather.getCity();
                 cache.put(cacheKey, weather);
@@ -175,6 +207,21 @@ public class WeatherService {
             throw new InternalServerErrorException("Failed to get all weathers");
         }
     }
+
+//    @Transactional
+//    public List<Weather> getAllWeathers() {
+//        customLogger.info("Getting all weathers");
+//        try {
+//            List<Weather> weathers = weatherRepository.findAll();
+//            weathers.forEach(weather -> {
+//                cacheKey = weather.getCity();
+//                cache.put(cacheKey, weather);
+//            });
+//            return weathers;
+//        } catch (Exception e) {
+//            throw new InternalServerErrorException("Failed to get all weathers");
+//        }
+//    }
 
     public WeatherDTO convertToDTO(Weather weather) {
         customLogger.info("Converting Weather to WeatherDTO");

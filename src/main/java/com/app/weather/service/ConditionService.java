@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class ConditionService {
@@ -33,15 +34,23 @@ public class ConditionService {
     @Transactional
     public List<Condition> createConditionBulk(List<ConditionDTO> conditionDTOs) {
         customLogger.info("Creating bulk of conditions");
-        List<Condition> createdConditions = new ArrayList<>();
 
-        for (ConditionDTO conditionDTO : conditionDTOs) {
-            if (conditionRepository.existsByText(conditionDTO.getText())) {
-                throw new BadRequestException(ALR_EXISTS_MSG);
-            }
-            Condition condition = convertToEntity(conditionDTO);
-            createdConditions.add(conditionRepository.save(condition));
-        }
+        List<Condition> conditions = conditionDTOs.stream()
+                .map(this::convertToEntity)
+                .filter(condition -> {
+                    if (conditionRepository.existsByText(condition.getText())) {
+                        throw new BadRequestException(ALR_EXISTS_MSG);
+                    }
+                    return true;
+                })
+                .collect(Collectors.toList());
+
+        List<Condition> createdConditions = conditionRepository.saveAll(conditions);
+        createdConditions.forEach(condition -> {
+            cacheKey = condition.getId().toString();
+            cache.put(cacheKey, condition);
+        });
+
         return createdConditions;
     }
 

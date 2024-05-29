@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
+@CrossOrigin
 @RequestMapping("/weather")
 public class WeatherController {
     private static final String COUNTER_MSG = "\nCounter: ";
@@ -30,6 +31,16 @@ public class WeatherController {
         return ResponseEntity.ok(createdWeathers.stream()
                 .map(weatherService::convertToDTO)
                 .toList());
+    }
+
+    @GetMapping("/city/{city}")
+    public ResponseEntity<WeatherDTO> getWeatherByCity(@PathVariable String city) {
+        customLogger.info("Получение weather по городу: " + city + COUNTER_MSG + counterService.incrementAndGet());
+        Weather weather = weatherService.getWeatherByCity(city);
+        if (weather == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(weatherService.convertToDTO(weather));
     }
 
     @GetMapping
