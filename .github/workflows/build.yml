@@ -1,11 +1,9 @@
-name: Build and Analyze
+name: Build and Deploy
 
 on:
   push:
     branches:
       - main
-  pull_request:
-    types: [opened, synchronize, reopened]
 
 jobs:
   build:
@@ -54,3 +52,40 @@ jobs:
         with:
           name: backend-service
           path: backend-service.tar
+
+  deploy:
+    name: Deploy to Render
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download Docker image from GitHub Artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: backend-service
+          path: backend-service.tar
+
+      - name: Load Docker image
+        run: docker load -i backend-service.tar
+
+      - name: Install Render CLI
+        run: curl -fsSL https://render.com/deploy | bash
+
+      - name: Login to Render CLI
+        env:
+          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
+        run: render login --api-key ${{ secrets.RENDER_API_KEY }}
+
+      - name: Deploy to Render.com
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          render service create \
+            --name backend-service \
+            --env production \
+            --image backend-service:latest \
+            --port 8080 \
+            --env DATABASE_URL=${{ secrets.DATABASE_URL }}
