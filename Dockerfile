@@ -2,9 +2,6 @@ FROM maven AS build
 
 WORKDIR /app
 
-#Свой айпи введи, его можно посмотреть через команду ifconfig
-ENV DATABASE_URL 192.168.100.6:5432
-
 COPY ./pom.xml ./
 
 RUN mvn dependency:go-offline -DexcludeArtifactIds=maven-checkstyle-plugin
