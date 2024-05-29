@@ -10,9 +10,9 @@ COPY ./src ./src
 
 RUN mvn clean install -DskipTests -Pdocker
 
-FROM openjdk:21-jdk-slim AS RUN
+FROM openjdk:21-jdk-slim AS run
 
-ENV DATABASE_URL db-container:5432
+ENV DATABASE_URL=db-container:5432
 WORKDIR /app
 
 COPY --from=build /app/target/*.jar /app/web.jar

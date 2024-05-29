@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: qhIsHHJqbDXsnXydbORiworFXQXrRIEv
       POSTGRES_DB: railway
     volumes:
-      - E:/postgres-data:/var/lib/postgresql/data
+      - ./postgres-data:/var/lib/postgresql/data
     ports:
       - "5432:5432"
 
@@ -28,7 +28,7 @@ services:
     environment:
       DATABASE_URL: db-container:5432
     volumes:
-      - E:/app-logs:/app/logs
+      - ./app-logs:/app/logs
     ports:
       - "8080:8080"
 
